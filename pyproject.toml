@@ -1,0 +1,51 @@
+[project]
+name = "caddix"
+version = "1.0.0"
+description = "Caddix is a helper library for Python designed to make working with PostgreSQL databases easier, faster, and safer."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { file = "LICENSE" }
+authors = [
+    { name = "Marcus Gros", email = "marcus-gros@freenet.de" }
+]
+keywords = ["postgresql", "psycopg", "database", "connection-pool", "sql", "orm-alternative"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Database",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+dependencies = [
+    "psycopg[binary]>=3.1.0",
+]
+
+[project.optional-dependencies]
+c = [
+    "psycopg[c]>=3.1.0",
+]
+dev = [
+    "pytest>=8.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/MarcusGros/caddix"
+Repository = "https://github.com/MarcusGros/caddix"
+Documentation = "https://github.com/MarcusGros/caddix#readme"
+"Bug Tracker" = "https://github.com/MarcusGros/caddix/issues"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["caddix"]
+
+[tool.pytest.ini_options]
+testpaths = ["Tests"]
+python_files = ["tests.py", "test_*.py"]

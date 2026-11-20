@@ -1,0 +1,26 @@
+{
+  "project": "caddix",
+  "version": "1.0.0",
+  "description": "PostgreSQL helper library for Python (connection pooling, session management, query building, CRUD, batch, stored funcs)",
+  "modules": {
+    "caddix": {
+      "__init__.py": "Exports: Setup (Configs), PGPool, DatabaseSession, CaddixError, CaddixSessionError, dict_row, tuple_row, scalar_row, class_row, namedtuple_row",
+      "config.py": "Configs / Setup: Thread-safe singleton registry for PG connection parameters (dbname, user, host, port, max_conns, options)",
+      "pool.py": "PGPool: Connection pool wrapper around psycopg_pool.ConnectionPool; handles checkouts, returns, connection health",
+      "base.py": "DatabaseSession: Core DB interface. Methods: query, select, select_one, select_many, insert, insert_batch, update, update_batch, upsert, upsert_batch, delete, exists, call_func, call_proc. Exceptions: CaddixError, CaddixSessionError",
+      "stores.py": "KeyValueStore / Store: Abstraction for simple key-value / document persistence on PostgreSQL tables",
+      "utils.py": "Query building helpers: identifier quoting, parameter sanitization, batch query construction"
+    }
+  },
+  "tests": [
+    "Tests/test_session_basics.py",
+    "Tests/test_crud_operations.py",
+    "Tests/test_batch_bulk.py",
+    "Tests/test_functions_procedures.py",
+    "Tests/test_config_pool.py",
+    "Tests/test_row_factories.py",
+    "Tests/test_security_penetration.py",
+    "Tests/test_provocation_edge_cases.py",
+    "Tests/test_stress_concurrency.py"
+  ]
+}
