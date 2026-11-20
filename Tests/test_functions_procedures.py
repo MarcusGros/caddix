@@ -16,7 +16,7 @@ class TestFunctionsAndProcedures(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        caddix.Setup(databasename='tusker', hostname='localhost', username='tusker', password='tusker', verbose=True)
+        caddix.Setup(databasename='caddix', hostname='localhost', username='caddix', password='caddix', verbose=True)
         with caddix.DatabaseSession() as db:
             db.execute("DROP TABLE IF EXISTS test_fn_proc_table CASCADE")
             db.execute("CREATE TABLE test_fn_proc_table (id serial primary key, val text)")

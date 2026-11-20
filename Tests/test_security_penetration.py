@@ -9,18 +9,18 @@ class TestSecurityPenetration(unittest.TestCase):
     def setUpClass(cls):
         caddix.Setup(
             name='pen_test_secure',
-            databasename='tusker',
+            databasename='caddix',
             hostname='localhost',
-            username='tusker',
-            password='tusker',
+            username='caddix',
+            password='caddix',
             verbose=True
         )
         caddix.Setup(
             name='pen_test_redacted',
-            databasename='tusker',
+            databasename='caddix',
             hostname='localhost',
-            username='tusker',
-            password='tusker',
+            username='caddix',
+            password='caddix',
             verbose=False
         )
 
@@ -174,16 +174,16 @@ class TestSecurityPenetration(unittest.TestCase):
         # Attacker trying to inject connection options like sslmode=disable or host redirects
         caddix.Setup(
             name='pen_dsn_inject',
-            databasename='tusker',
+            databasename='caddix',
             hostname='localhost',
-            username='tusker',
+            username='caddix',
             password='secret_pwd\' host=evil.com port=6666 dbname=compromised \'',
             verbose=False
         )
         dsn = caddix.Setup.configs['pen_dsn_inject']['dsn']
         # Must be properly escaped so evil host is part of the password literal, not top-level param
         self.assertIn("password='secret_pwd\\' host=evil.com port=6666 dbname=compromised \\''", dsn)
-        self.assertIn("user=tusker", dsn)
+        self.assertIn("user=caddix", dsn)
         self.assertIn("host=localhost", dsn)
 
 

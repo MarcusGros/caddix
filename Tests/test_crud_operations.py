@@ -9,10 +9,10 @@ class TestCRUDOperations(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         caddix.Setup(
-            databasename='tusker',
+            databasename='caddix',
             hostname='localhost',
-            username='tusker',
-            password='tusker',
+            username='caddix',
+            password='caddix',
             verbose=True
         )
 

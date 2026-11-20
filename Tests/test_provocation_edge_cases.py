@@ -11,10 +11,10 @@ class TestProvocationAndEdgeCases(unittest.TestCase):
     def setUpClass(cls):
         caddix.Setup(
             name='prov_test',
-            databasename='tusker',
+            databasename='caddix',
             hostname='localhost',
-            username='tusker',
-            password='tusker',
+            username='caddix',
+            password='caddix',
             verbose=True
         )
 

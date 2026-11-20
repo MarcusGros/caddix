@@ -11,10 +11,10 @@ class TestStressAndConcurrency(unittest.TestCase):
     def setUpClass(cls):
         caddix.Setup(
             name='stress_pool',
-            databasename='tusker',
+            databasename='caddix',
             hostname='localhost',
-            username='tusker',
-            password='tusker',
+            username='caddix',
+            password='caddix',
             verbose=True,
             max_connections=15,
             ttl=30

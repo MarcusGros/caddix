@@ -28,10 +28,10 @@ class TestRowFactories(unittest.TestCase):
     def setUpClass(cls):
         caddix.Setup(
             name='rf_default',
-            databasename='tusker',
+            databasename='caddix',
             hostname='localhost',
-            username='tusker',
-            password='tusker',
+            username='caddix',
+            password='caddix',
             verbose=True
         )
 
@@ -96,10 +96,10 @@ class TestRowFactories(unittest.TestCase):
     def test_global_setup_row_factory_configuration(self):
         caddix.Setup(
             name='rf_global_tuple',
-            databasename='tusker',
+            databasename='caddix',
             hostname='localhost',
-            username='tusker',
-            password='tusker',
+            username='caddix',
+            password='caddix',
             cursor_factory=tuple_row
         )
         with DatabaseSession('rf_global_tuple') as db:

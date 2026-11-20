@@ -14,27 +14,27 @@ class TestConfigAndPool(unittest.TestCase):
     def test_setup_single_and_multi_config(self):
         # Default config
         caddix.Setup(
-            databasename='tusker',
+            databasename='caddix',
             hostname='localhost',
-            username='tusker',
-            password='tusker',
+            username='caddix',
+            password='caddix',
             verbose=True,
             ttl=5,
             max_connections=3
         )
         self.assertIn('default', caddix.Setup.configs)
-        self.assertEqual(caddix.Setup.configs['default']['dbname'], 'tusker')
-        self.assertEqual(caddix.Setup.configs['default']['user'], 'tusker')
+        self.assertEqual(caddix.Setup.configs['default']['dbname'], 'caddix')
+        self.assertEqual(caddix.Setup.configs['default']['user'], 'caddix')
         self.assertEqual(caddix.Setup.configs['default']['max_connections'], 3)
         self.assertEqual(caddix.Setup.configs['default']['ttl'], 5)
 
         # Secondary named config
         caddix.Setup(
             name='analytics_db',
-            databasename='tusker',
+            databasename='caddix',
             hostname='localhost',
-            username='tusker',
-            password='tusker',
+            username='caddix',
+            password='caddix',
             verbose=False,
             ttl=10,
             max_connections=10,
@@ -47,15 +47,15 @@ class TestConfigAndPool(unittest.TestCase):
     def test_dsn_escaping_special_characters(self):
         caddix.Setup(
             name='complex_auth',
-            databasename='tusker',
+            databasename='caddix',
             hostname='localhost',
-            username='tusker',
+            username='caddix',
             password='complex\'password"with spaces & symbols @#$%',
             verbose=True
         )
         dsn = caddix.Setup.configs['complex_auth']['dsn']
-        self.assertIn("user=tusker", dsn)
-        self.assertIn("dbname=tusker", dsn)
+        self.assertIn("user=caddix", dsn)
+        self.assertIn("dbname=caddix", dsn)
         self.assertIn("password='complex\\'password\"with spaces & symbols @#$%'", dsn)
 
     def test_configs_store_dict_interface(self):
@@ -68,10 +68,10 @@ class TestConfigAndPool(unittest.TestCase):
     def test_pool_connection_creation_and_reuse(self):
         caddix.Setup(
             name='pool_test',
-            databasename='tusker',
+            databasename='caddix',
             hostname='localhost',
-            username='tusker',
-            password='tusker',
+            username='caddix',
+            password='caddix',
             max_connections=5,
             ttl=10
         )
@@ -91,10 +91,10 @@ class TestConfigAndPool(unittest.TestCase):
     def test_pool_ttl_expiration(self):
         caddix.Setup(
             name='pool_ttl_test',
-            databasename='tusker',
+            databasename='caddix',
             hostname='localhost',
-            username='tusker',
-            password='tusker',
+            username='caddix',
+            password='caddix',
             max_connections=5,
             ttl=1  # 1 second TTL
         )
@@ -114,10 +114,10 @@ class TestConfigAndPool(unittest.TestCase):
     def test_pool_thread_safety(self):
         caddix.Setup(
             name='pool_thread_test',
-            databasename='tusker',
+            databasename='caddix',
             hostname='localhost',
-            username='tusker',
-            password='tusker',
+            username='caddix',
+            password='caddix',
             max_connections=10,
             ttl=10
         )
