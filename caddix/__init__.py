@@ -5,7 +5,7 @@
 
 from psycopg.rows import class_row, dict_row, namedtuple_row, scalar_row, tuple_row
 
-from .base import DatabaseSession, CaddixError, CaddixSessionError, TuskerError, TuskerSessionError
+from .base import DatabaseSession, CaddixError, CaddixSessionError
 from .config import Configs as Setup
 from .pool import PGPool
 
@@ -23,8 +23,6 @@ __all__ = [
     "DatabaseSession",
     "CaddixError",
     "CaddixSessionError",
-    "TuskerError",
-    "TuskerSessionError",
     "dict_row",
     "tuple_row",
     "scalar_row",

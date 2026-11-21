@@ -164,6 +164,36 @@ class TestSessionBasics(unittest.TestCase):
             cols = get_column_names(db, 'test_session_table')
             self.assertListEqual(sorted(cols), sorted(['id', 'title', 'is_active', 'score', 'notes']))
 
+    def test_exceptions_available_at_top_level(self):
+        import caddix
+        self.assertTrue(hasattr(caddix, 'CaddixError'))
+        self.assertTrue(hasattr(caddix, 'CaddixSessionError'))
+        self.assertFalse(hasattr(caddix, 'TuskerError'))
+        self.assertFalse(hasattr(caddix, 'TuskerSessionError'))
+        self.assertIs(caddix.CaddixError, caddix.base.CaddixError)
+        self.assertIs(caddix.CaddixSessionError, caddix.base.CaddixSessionError)
+        self.assertTrue(issubclass(caddix.CaddixError, Exception))
+        self.assertTrue(issubclass(caddix.CaddixSessionError, Exception))
+
+    def test_unregistered_config_raises_caddix_session_error(self):
+        with self.assertRaises(caddix.CaddixSessionError) as ctx:
+            with DatabaseSession('unregistered_profile_xyz'):
+                pass
+        self.assertIn('unregistered_profile_xyz', str(ctx.exception))
+
+    def test_caddix_error_formatting_modes(self):
+        # 1. Verbose mode includes statement and params
+        orig_err = ValueError("Something failed")
+        err_verbose = caddix.CaddixError(orig_err, "SELECT * FROM test", {'p': 1}, verbose=True)
+        self.assertIn("SELECT * FROM test", str(err_verbose))
+        self.assertIn("{'p': 1}", str(err_verbose))
+        self.assertIn("ValueError: Something failed", str(err_verbose))
+
+        # 2. Non-verbose mode without diag keeps orig error message
+        err_non_verbose = caddix.CaddixError(orig_err, "SELECT * FROM test", {'p': 1}, verbose=False)
+        self.assertNotIn("SELECT * FROM test", str(err_non_verbose))
+        self.assertIn("ValueError: Something failed", str(err_non_verbose))
+
 
 if __name__ == '__main__':
     unittest.main()

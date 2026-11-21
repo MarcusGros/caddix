@@ -166,7 +166,7 @@ class TestBatchAndBulk(unittest.TestCase):
     def test_executemany_error_reporting(self):
         with DatabaseSession() as db:
             bad_values = [{'id': 'not_an_int', 'code': 'ERR'}]
-            with self.assertRaises(caddix.base.CaddixError) as ctx:
+            with self.assertRaises(caddix.CaddixError) as ctx:
                 db.executemany("INSERT INTO test_batch_table (id, code) VALUES (%(id)s, %(code)s)", bad_values)
             err_msg = str(ctx.exception)
             self.assertIn('not_an_int', err_msg)
@@ -237,6 +237,14 @@ class TestBatchAndBulk(unittest.TestCase):
 
             r2 = db.select_one('test_batch_table', id=2)
             self.assertEqual(r2['label'], 'ShouldBeInserted')
+
+
+    def test_insert_batch_error_reporting(self):
+        with DatabaseSession() as db:
+            bad_records = [{'id': 'not_an_int', 'code': 'ERR'}]
+            with self.assertRaises(caddix.CaddixError) as ctx:
+                db.insert_batch('test_batch_table', bad_records)
+            self.assertTrue(isinstance(ctx.exception, caddix.CaddixError))
 
 
 if __name__ == '__main__':

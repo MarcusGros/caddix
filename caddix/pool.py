@@ -31,6 +31,8 @@ class PGPool:
 
     def __init__(self, configname='default'):
         self.configname = configname
+        if configname not in Configs.configs:
+            raise KeyError(f"Database configuration '{configname}' not found. Please register it via caddix.Setup(...) first.")
         cnf = Configs.configs[configname]
         dsn = cnf['dsn']
         ttl = cnf.get('ttl', 10)

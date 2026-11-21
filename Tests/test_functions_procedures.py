@@ -145,7 +145,7 @@ class TestFunctionsAndProcedures(unittest.TestCase):
             self.assertEqual(users[1]['id'], 2)
 
         with caddix.DatabaseSession() as db:
-            with self.assertRaises(caddix.base.CaddixSessionError):
+            with self.assertRaises(caddix.CaddixSessionError):
                 db.func_many('test_get_users', None)
 
     def test_func_list(self):
@@ -200,10 +200,10 @@ class TestFunctionsAndProcedures(unittest.TestCase):
 
     def test_func_error_handling(self):
         with caddix.DatabaseSession() as db:
-            with self.assertRaises(caddix.base.CaddixError):
+            with self.assertRaises(caddix.CaddixError):
                 db.func_scalar('non_existent_func_xyz', 1, 2)
 
-            with self.assertRaises(caddix.base.CaddixError):
+            with self.assertRaises(caddix.CaddixError):
                 db.call_proc('non_existent_proc_xyz', 1, 2)
 
 

@@ -2,6 +2,11 @@
   "project": "caddix",
   "version": "1.1.0",
   "description": "PostgreSQL helper library for Python (connection pooling, session management, query building, CRUD, batch, stored funcs)",
+  "guidelines_and_rules": {
+    "no_pokemon_exceptions": "STRICTLY FORBIDDEN: Never catch broad exceptions ('except Exception:', 'except (psycopg.Error, Exception):', catch-them-all). Always catch explicit, narrow exception types (e.g. psycopg.Error, queue.Empty, queue.Full).",
+    "default_verbose": "verbose must default to False.",
+    "delete_safety": "delete() without where kwargs requires allow_all=True."
+  },
   "modules": {
     "caddix": {
       "__init__.py": "Exports: Setup (Configs), PGPool, DatabaseSession, CaddixError, CaddixSessionError, dict_row, tuple_row, scalar_row, class_row, namedtuple_row",

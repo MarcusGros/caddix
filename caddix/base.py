@@ -24,11 +24,11 @@ log = logging.getLogger('caddix')
 
 
 class CaddixError(Exception):
-    def __init__(self, orig: Exception, stm: str, params: Any, verbose: bool = False):
+    def __init__(self, orig: Exception, stm: str | None, params: Any, verbose: bool = False):
         self.orig = orig
         if verbose:
             msg = [
-                stm, str(params),
+                stm or '', str(params),
                 f'{orig.__class__.__name__}: {orig}'
             ]
         else:
@@ -36,6 +36,8 @@ class CaddixError(Exception):
             primary_msg = getattr(diag, 'message_primary', None) if diag else None
             if primary_msg:
                 msg = [f'{orig.__class__.__name__}: {primary_msg}']
+            elif str(orig):
+                msg = [f'{orig.__class__.__name__}: {orig}']
             else:
                 msg = [f'{orig.__class__.__name__}']
         super().__init__('\n'.join(msg))
@@ -43,11 +45,6 @@ class CaddixError(Exception):
 
 class CaddixSessionError(Exception):
     pass
-
-
-# Backward compatibility aliases
-TuskerError = CaddixError
-TuskerSessionError = CaddixSessionError
 
 
 class DatabaseSession:
@@ -72,6 +69,10 @@ class DatabaseSession:
 
     def __init__(self, configname='default', cursor_factory=None):
         self.configname = configname
+        if configname not in Configs.configs:
+            raise CaddixSessionError(
+                f"Database configuration '{configname}' not found. Please register it via caddix.Setup(...) first."
+            )
         self.cnf = Configs.configs[configname]
 
         self.cursor_factory = self.cnf['default_rowfactory']
@@ -132,7 +133,7 @@ class DatabaseSession:
                 self.cur.execute(query, clean_kwargs)
             else:
                 self.cur.execute(query)
-        except Exception as e:
+        except psycopg.Error as e:
             params = args if args else clean_kwargs
             raise CaddixError(e, self.last_query, params, verbose=self.cnf.get('verbose', False)) from None
 
@@ -141,7 +142,7 @@ class DatabaseSession:
         verbose = self.cnf.get('verbose', False)
         try:
             self.cur.executemany(query, values)
-        except Exception as e:
+        except psycopg.Error as e:
             raise CaddixError(e, self.last_query, values, verbose=verbose) from None
 
     # ===== fetch from cursor after executing =====
@@ -304,9 +305,14 @@ class DatabaseSession:
                 cols=sql.SQL(", ").join(map(sql.Identifier, columns))
             )
 
-            with self.cur.copy(sql_copy) as copy:
-                for row in clean_values:
-                    copy.write_row([row.get(col) for col in columns])
+            try:
+                with self.cur.copy(sql_copy) as copy:
+                    for row in clean_values:
+                        copy.write_row([row.get(col) for col in columns])
+            except psycopg.Error as e:
+                self.last_query = str(sql_copy)
+                verbose = self.cnf.get('verbose', False)
+                raise CaddixError(e, self.last_query, values, verbose=verbose) from None
 
             return self.cur.rowcount
 

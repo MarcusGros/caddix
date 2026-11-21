@@ -729,7 +729,7 @@ import caddix
 try:
     with caddix.DatabaseSession() as db:
         db.execute("SELECT * FROM non_existing_table WHERE id = %(id)s", id=123)
-except caddix.base.CaddixError as e:
+except caddix.CaddixError as e:
     print("--- Caddix SQL Error ---")
     print("Original Exception:", e.orig)
     print("Full Debug Message:\n", e)
@@ -743,7 +743,7 @@ Logical errors (e.g. calling `select_many()` without a size or missing columns d
 try:
     with caddix.DatabaseSession() as db:
         db.select_many('users', size=None)
-except caddix.base.CaddixSessionError as e:
+except caddix.CaddixSessionError as e:
     print("Session Error:", e)
 ```
 
