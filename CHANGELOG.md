@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **CI / CD Automation**: Added GitHub Actions workflows for matrix testing against PostgreSQL 16 (Python 3.10, 3.11, 3.12, 3.13) and automated PyPI Trusted Publishing (OIDC).
 - **Changelog**: Added `CHANGELOG.md` tracking project history and releases.
 
+### Changed
+- **Default `verbose` Setting**: Changed the default value of `verbose` in `caddix.Setup` and `CaddixError` from `True` to `False`. Verbose mode is intended for developer debugging; disabling it by default prevents sensitive queries and parameters from leaking into production logs.
+
 ---
 
 ## [1.0.0] - 2026-11-21

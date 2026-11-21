@@ -122,7 +122,7 @@ where `set_clause` maps each non-conflict column to `col = EXCLUDED.col`.
 - **`CaddixError`**:
   Raised by `execute()` and `executemany()` whenever a database or driver error occurs.
   - `e.orig`: The underlying `psycopg.Error` instance.
-  - Output: Displays the executed SQL query, parameter values, and error category when `verbose=True`.
+  - Output: Displays the executed SQL query, parameter values, and error category when `verbose=True` (default is `verbose=False` to prevent sensitive query leaks in production).
 - **`CaddixSessionError`**:
   Raised for logical or usage errors within the session (e.g. missing required keys in batch updates or invalid arguments).
 

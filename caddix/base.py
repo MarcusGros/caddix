@@ -24,7 +24,7 @@ log = logging.getLogger('caddix')
 
 
 class CaddixError(Exception):
-    def __init__(self, orig: Exception, stm: str, params: Any, verbose: bool = True):
+    def __init__(self, orig: Exception, stm: str, params: Any, verbose: bool = False):
         self.orig = orig
         if verbose:
             msg = [
@@ -134,11 +134,11 @@ class DatabaseSession:
                 self.cur.execute(query)
         except Exception as e:
             params = args if args else clean_kwargs
-            raise CaddixError(e, self.last_query, params, verbose=self.cnf.get('verbose', True)) from None
+            raise CaddixError(e, self.last_query, params, verbose=self.cnf.get('verbose', False)) from None
 
     def executemany(self, query, values):
         self.last_query = str(query)
-        verbose = self.cnf.get('verbose', True)
+        verbose = self.cnf.get('verbose', False)
         try:
             self.cur.executemany(query, values)
         except Exception as e:

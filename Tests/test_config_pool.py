@@ -12,13 +12,12 @@ from caddix.pool import PGPool
 class TestConfigAndPool(unittest.TestCase):
 
     def test_setup_single_and_multi_config(self):
-        # Default config
+        # Default config (without verbose -> defaults to False)
         caddix.Setup(
             databasename='caddix',
             hostname='localhost',
             username='caddix',
             password='caddix',
-            verbose=True,
             ttl=5,
             max_connections=3
         )
@@ -27,21 +26,22 @@ class TestConfigAndPool(unittest.TestCase):
         self.assertEqual(caddix.Setup.configs['default']['user'], 'caddix')
         self.assertEqual(caddix.Setup.configs['default']['max_connections'], 3)
         self.assertEqual(caddix.Setup.configs['default']['ttl'], 5)
+        self.assertEqual(caddix.Setup.configs['default']['verbose'], False)
 
-        # Secondary named config
+        # Secondary named config with explicit verbose=True
         caddix.Setup(
             name='analytics_db',
             databasename='caddix',
             hostname='localhost',
             username='caddix',
             password='caddix',
-            verbose=False,
+            verbose=True,
             ttl=10,
             max_connections=10,
             cursor_factory=tuple_row
         )
         self.assertIn('analytics_db', caddix.Setup.configs)
-        self.assertEqual(caddix.Setup.configs['analytics_db']['verbose'], False)
+        self.assertEqual(caddix.Setup.configs['analytics_db']['verbose'], True)
         self.assertEqual(caddix.Setup.configs['analytics_db']['default_rowfactory'], tuple_row)
 
     def test_dsn_escaping_special_characters(self):

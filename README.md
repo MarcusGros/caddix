@@ -144,7 +144,7 @@ caddix.Setup(
     application_name='my_service',
     ttl=30,               # Reconnect after 30 seconds of inactivity
     max_connections=15,   # Pool queue capacity
-    verbose=True          # Detailed query info on errors
+    verbose=False         # Set to True for detailed query/param debug messages
 )
 ```
 
@@ -194,7 +194,7 @@ with caddix.DatabaseSession(configname='analytics') as db:
 | `application_name` | `str` | `'python'` | Application name displayed in `pg_stat_activity` and logs. |
 | `ttl` | `int` | `10` | Time-to-Live (in seconds) for pooled connections before refresh. |
 | `max_connections` | `int` | `10` | Maximum number of active pooled connections in the queue. |
-| `verbose` | `bool` | `True` | Include full SQL statement and parameters in exception messages. |
+| `verbose` | `bool` | `False` | Include full SQL statement and parameters in exception messages (disabled by default; intended for developer debugging). |
 | `default_rowfactory` | `callable` | `dict_row` | Default cursor row factory (`dict_row`, `tuple_row`, etc.). |
 
 ---
@@ -714,10 +714,14 @@ with caddix.DatabaseSession() as db:
 
 When a database error occurs (syntax error, constraint violation, connection issue), Caddix wraps the error in a descriptive `CaddixError` exception.
 
-If `verbose=True` (default), the error message contains:
+By default, `verbose=False` is set to prevent SQL queries and sensitive parameters from unintentionally leaking into application logs or production outputs.
+
+When `verbose=True` is explicitly enabled (recommended during development and debugging), the error message contains:
 1. The exact SQL statement that failed.
 2. The parameters passed to the statement.
 3. The original psycopg exception class and message.
+
+When `verbose=False` (default), only the sanitized primary database error message is included in the exception text. The original exception object remains accessible via `e.orig`.
 
 ```python
 import caddix
@@ -810,12 +814,12 @@ if __name__ == '__main__':
 
 ## 📚 Documentation & Deep Dives
 
-For further reading, deep architectural details, and developer guidelines, explore the documents in the [`docs/`](docs/) directory:
+For further reading, deep architectural details, and developer guidelines, explore the documents in the [`docs/`](https://github.com/MarcusGros/caddix/tree/main/docs) directory:
 
-- [**Changelog**](CHANGELOG.md): Release history, breaking changes, and migration notes.
-- [**API Reference**](docs/API_REFERENCE.md): Full technical reference of all classes, methods, parameters, and exceptions.
-- [**Architecture & Internals**](docs/ARCHITECTURE.md): Component mapping, lifecycle workflows, and security architecture.
-- [**Developer & Contributor Guide**](docs/DEVELOPER_GUIDE.md): Setup instructions, testing guidelines, and conventions for contributors.
+- [**Changelog**](https://github.com/MarcusGros/caddix/blob/main/CHANGELOG.md): Release history, breaking changes, and migration notes.
+- [**API Reference**](https://github.com/MarcusGros/caddix/blob/main/docs/API_REFERENCE.md): Full technical reference of all classes, methods, parameters, and exceptions.
+- [**Architecture & Internals**](https://github.com/MarcusGros/caddix/blob/main/docs/ARCHITECTURE.md): Component mapping, lifecycle workflows, and security architecture.
+- [**Developer & Contributor Guide**](https://github.com/MarcusGros/caddix/blob/main/docs/DEVELOPER_GUIDE.md): Setup instructions, testing guidelines, and conventions for contributors.
 
 ---
 
@@ -823,6 +827,6 @@ For further reading, deep architectural details, and developer guidelines, explo
 
 - **Author**: Marcus Gros (`marcus-gros@freenet.de`)
 - **Copyright**: 2026 Marcus Gros
-- **License**: [MIT](LICENSE)
+- **License**: [MIT](https://github.com/MarcusGros/caddix/blob/main/LICENSE)
 
 Have fun building fast, secure PostgreSQL applications with **Caddix**! 🐘

@@ -36,7 +36,7 @@ caddix.Setup(
     port: int = 5432,
     name: str = 'default',
     connect_timeout: int = 10,
-    verbose: bool = True,
+    verbose: bool = False,
     application_name: str = 'python',
     ttl: int = 10,
     max_connections: int = 10,
@@ -52,7 +52,7 @@ caddix.Setup(
 - `port` *(int, optional)*: Port number of the PostgreSQL server. Default: `5432`.
 - `name` *(str, optional)*: Unique identifier for this configuration profile. Default: `'default'`.
 - `connect_timeout` *(int, optional)*: Connection timeout in seconds. Default: `10`.
-- `verbose` *(bool, optional)*: When `True`, detailed SQL statements and parameters are included in error messages. Default: `True`.
+- `verbose` *(bool, optional)*: When `True`, detailed SQL statements and parameters are included in error messages (intended for development/debugging). Default: `False`.
 - `application_name` *(str, optional)*: Application name reported to PostgreSQL logs and `pg_stat_activity`. Default: `'python'`.
 - `ttl` *(int, optional)*: Time-to-Live for pooled connections in seconds. Expired connections are automatically reconnected. Default: `10`.
 - `max_connections` *(int, optional)*: Maximum number of pooled connections. Default: `10`.
@@ -400,7 +400,7 @@ with caddix.DatabaseSession(cursor_factory=caddix.namedtuple_row) as db:
 
 ## 5. Exceptions
 
-- `CaddixError(orig: Exception, stm: str, params: dict)`:
-  Raised when an executed SQL statement encounters a database or driver error. Contains the original exception, the executed query string, and the parameter values.
+- `CaddixError(orig: Exception, stm: str, params: dict, verbose: bool = False)`:
+  Raised when an executed SQL statement encounters a database or driver error. When `verbose=True`, it includes the executed query string and parameter values; when `verbose=False` (default), only sanitized error details are formatted.
 - `CaddixSessionError`:
   Raised for logical or operational errors in session usage (e.g. missing required keys in batch updates or invalid arguments).

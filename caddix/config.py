@@ -18,7 +18,7 @@ class Configs:
     configs = {}
 
     def __init__(self, databasename=None, username=None, password=None, hostname=None, port=5432,
-                 name='default', connect_timeout=10, verbose=True,
+                 name='default', connect_timeout=10, verbose=False,
                  application_name='python', ttl=10, max_connections=10,
                  default_rowfactory=dict_row, cursor_factory=None):
         if cursor_factory is not None:
