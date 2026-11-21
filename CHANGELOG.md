@@ -14,7 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Changelog**: Added `CHANGELOG.md` tracking project history and releases.
 
 ### Changed
-- **Streamlined Documentation**: Refactored `README.md` to provide a concise overview, key features, straightforward installation instructions, and quickstart guide, while relocating the full User Manual and table of contents to `docs/USER_GUIDE.md`.
+- **Streamlined Documentation & Query Guidance**: Refactored `README.md` to provide a concise overview and relocated the full User Manual to `docs/USER_GUIDE.md`. Added explicit guidance on the scope of the SQL-free SELECT API (exact equality and `IS NULL`), best practices for complex queries with parameterized Raw SQL, and a future outlook on potential query builder enhancements.
 - **Default `verbose` Setting**: Changed the default value of `verbose` in `caddix.Setup` and `CaddixError` from `True` to `False`. Verbose mode is intended for developer debugging; disabling it by default prevents sensitive queries and parameters from leaking into production logs.
 - **Robust Exception Handling**: Streamlined error wrapping across all session operations (including `insert_batch` via `COPY FROM STDIN`), improved informative message formatting for non-diagnostic exceptions in non-verbose mode, and added friendly `CaddixSessionError` messages for missing connection profiles.
 

@@ -167,7 +167,9 @@ id_to_name = db.execute_fetchdict("SELECT id, name FROM users")
 
 ### SQL-Free SELECT API
 
-Automatically builds and executes secure SELECT queries using `psycopg.sql.Identifier`:
+Automatically builds and executes secure SELECT queries using `psycopg.sql.Identifier`.
+
+> ℹ️ **Design & Query Scope**: The `select_*` helper methods are intentionally optimized for straightforward equality checks (`key=value`) and `IS NULL` tests (`key=None`). For advanced queries requiring comparisons (`>`, `<`, `>=`, `<=`, `!=`), set inclusion (`IN`), pattern matching (`LIKE`, `ILIKE`), boolean `OR` logic, explicit `ORDER BY`, or pagination (`LIMIT`/`OFFSET`), use the parameterized [Combined Execute & Fetch Helpers](#combined-execute--fetch-helpers) (e.g. `db.execute_fetchall(...)`). More expressive query builder capabilities may be considered in future releases without fixed timelines.
 
 #### `select_all(tablename, columns=['*'], **kwargs)`
 Returns all rows matching the WHERE conditions.

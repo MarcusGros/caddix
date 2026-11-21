@@ -24,6 +24,7 @@ This guide provides a comprehensive, practical walkthrough of **Caddix**, coveri
    - [Scalar, List & Dict SELECTs (`select_scalar`, `select_list`, `select_dict`)](#scalar-list--dict-selects-select_scalar-select_list-select_dict)
    - [Python Keywords as Column Names (`_from`, `_class`, etc.)](#python-keywords-as-column-names-_from-_class-etc)
    - [NULL Value Handling](#null-value-handling)
+   - [Current Scope, Complex Queries & Future Outlook](#current-scope-complex-queries--future-outlook)
 6. [Data Manipulation (CRUD)](#6-data-manipulation-crud)
    - [Inserting Rows (`insert`)](#inserting-rows-insert)
    - [Updating Rows (`update`)](#updating-rows-update)
@@ -325,6 +326,43 @@ with caddix.DatabaseSession() as db:
     # Generates: WHERE deleted_at IS NULL AND verified = true
     active_users = db.select_all('users', deleted_at=None, verified=True)
 ```
+
+### Current Scope, Complex Queries & Future Outlook
+
+The SQL-free `select_*` helpers are intentionally lightweight and focused on exact-match equality filters (`column=value`) and `IS NULL` checks (`column=None`).
+
+#### Handling Advanced Queries with Raw SQL
+When your application requires advanced SQL query capabilities, use Caddix's parameterized `execute_*` helpers (such as `execute_fetchall` or `execute_fetchone`):
+- **Comparison operators**: `>`, `<`, `>=`, `<=`, `!=` / `<>`
+- **Set inclusion & pattern matching**: `IN (...)`, `LIKE`, `ILIKE`
+- **Complex boolean logic**: `OR` conditions, parentheses, expressions
+- **Sorting & Pagination**: Explicit `ORDER BY`, `LIMIT`, and `OFFSET`
+
+```python
+with caddix.DatabaseSession() as db:
+    # Advanced filtering, pattern matching, ordering, and pagination
+    active_users = db.execute_fetchall(
+        """
+        SELECT id, username, email, score
+        FROM users
+        WHERE (score > %(min_score)s OR role = %(role)s)
+          AND status IN (%(s1)s, %(s2)s)
+          AND email LIKE %(pattern)s
+        ORDER BY score DESC, created_at ASC
+        LIMIT %(limit)s OFFSET %(offset)s
+        """,
+        min_score=100,
+        role='admin',
+        s1='active',
+        s2='verified',
+        pattern='%@company.com',
+        limit=25,
+        offset=50
+    )
+```
+
+#### Note on Future Enhancements
+Extended query-building features (such as comparison operators, custom ordering, or pagination syntax) may be considered and introduced in future versions. However, this is an open possibility without guarantees or fixed schedules; currently, parameterized Raw SQL is the standard and recommended approach for non-trivial querying.
 
 ---
 
