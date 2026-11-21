@@ -6,7 +6,7 @@
  \___\__,_|\__,_|\__,_|_/_/\_\
 ```
 
-# Caddix - PostgreSQL Connection Assistant & User Manual
+# Caddix - PostgreSQL Connection Assistant 
 
 **Caddix** is a lightweight, high-performance Python helper library built on top of [psycopg 3](https://www.psycopg.org/psycopg3/docs/) designed to make interacting with PostgreSQL databases easier, faster, and safer.
 
@@ -458,9 +458,13 @@ with caddix.DatabaseSession() as db:
     # Delete all inactive guest accounts
     db.delete('users', role='guest', active=False)
     db.commit()
+
+    # Intentionally deleting all rows in a table requires allow_all=True
+    db.delete('temp_logs', allow_all=True)
+    db.commit()
 ```
 
-> ⚠️ **Warning**: Calling `db.delete('table_name')` without keyword filters will execute `DELETE FROM table_name` and remove all rows.
+> 🛡️ **Safety Guard**: Calling `db.delete('table_name')` without WHERE filter criteria will raise a `CaddixSessionError` to prevent accidental full-table data loss. To intentionally delete all rows, pass `allow_all=True`.
 
 ---
 
@@ -808,6 +812,7 @@ if __name__ == '__main__':
 
 For further reading, deep architectural details, and developer guidelines, explore the documents in the [`docs/`](docs/) directory:
 
+- [**Changelog**](CHANGELOG.md): Release history, breaking changes, and migration notes.
 - [**API Reference**](docs/API_REFERENCE.md): Full technical reference of all classes, methods, parameters, and exceptions.
 - [**Architecture & Internals**](docs/ARCHITECTURE.md): Component mapping, lifecycle workflows, and security architecture.
 - [**Developer & Contributor Guide**](docs/DEVELOPER_GUIDE.md): Setup instructions, testing guidelines, and conventions for contributors.

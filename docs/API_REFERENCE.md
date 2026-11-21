@@ -228,11 +228,18 @@ db.update('users', values={'active': False}, role='guest')
 db.commit()
 ```
 
-#### `delete(tablename: str, **kwargs)`
+#### `delete(tablename: str, returning: str = None, allow_all: bool = False, **kwargs)`
 Deletes rows matching the WHERE conditions in `**kwargs`.
-*Note: If no `kwargs` are passed, all rows in the table will be deleted.*
+- `returning`: Optional `RETURNING` expression.
+- `allow_all`: Safety flag. Must be set to `True` to intentionally delete all rows when no WHERE conditions (`**kwargs`) are provided. Raises `CaddixSessionError` if omitted when deleting without conditions.
+- Returns list of deleted rows if `returning` is provided, otherwise `None`.
 ```python
+# Delete specific rows
 db.delete('users', id=42)
+db.commit()
+
+# Delete all rows (requires allow_all=True)
+db.delete('temp_logs', allow_all=True)
 db.commit()
 ```
 

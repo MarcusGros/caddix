@@ -1,6 +1,6 @@
 {
   "project": "caddix",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "PostgreSQL helper library for Python (connection pooling, session management, query building, CRUD, batch, stored funcs)",
   "modules": {
     "caddix": {

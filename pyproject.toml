@@ -1,6 +1,6 @@
 [project]
 name = "caddix"
-version = "1.0.0"
+version = "1.1.0"
 description = "Caddix is a helper library for Python designed to make working with PostgreSQL databases easier, faster, and safer."
 readme = "README.md"
 requires-python = ">=3.10"

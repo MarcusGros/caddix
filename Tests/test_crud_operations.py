@@ -170,6 +170,26 @@ class TestCRUDOperations(unittest.TestCase):
             self.assertEqual(len(books), 0)
             db.commit()
 
+    def test_delete_safety_protection(self):
+        with DatabaseSession() as db:
+            # Attempting to delete all rows without criteria and without allow_all=True must raise CaddixSessionError
+            with self.assertRaises(caddix.CaddixSessionError) as ctx:
+                db.delete('test_crud_table')
+            self.assertIn("allow_all=True", str(ctx.exception))
+
+            # Explicit allow_all=False also raises CaddixSessionError
+            with self.assertRaises(caddix.CaddixSessionError):
+                db.delete('test_crud_table', allow_all=False)
+
+            # Explicit allow_all=True allows deleting all rows
+            deleted = db.delete('test_crud_table', allow_all=True, returning='*')
+            self.assertEqual(len(deleted), 4)
+
+            # Table is now empty
+            remaining = db.select_all('test_crud_table')
+            self.assertEqual(len(remaining), 0)
+            db.commit()
+
     def test_reserved_keywords_in_column_names(self):
         with DatabaseSession() as db:
             # Columns "from" and "order"

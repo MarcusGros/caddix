@@ -274,8 +274,13 @@ class DatabaseSession:
             return self.fetchall()
         return None
 
-    def delete(self, tablename: str, returning=None, **kwargs):
+    def delete(self, tablename: str, returning=None, allow_all: bool = False, **kwargs):
         kwargs = self.__kwargs__(kwargs)
+        if not kwargs and not allow_all:
+            raise CaddixSessionError(
+                f"Deleting all rows from '{tablename}' without WHERE conditions is disabled by default. "
+                f"Pass allow_all=True to confirm full table deletion."
+            )
         query, safe_params = build_delete_query(self.con, tablename, returning=returning, **kwargs)
         self.execute(query, **safe_params)
         if returning:

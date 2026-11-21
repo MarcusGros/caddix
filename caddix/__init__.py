@@ -15,7 +15,7 @@ __author__ = "Marcus Gros"
 __email__ = "marcus-gros@freenet.de"
 __copyright__ = "Copyright 2026 Marcus Gros"
 __license__ = "MIT"
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 __requirements__ = ["psycopg"]
 __all__ = [
     "Setup",
