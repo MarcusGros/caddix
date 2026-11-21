@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="caddix.jpeg" alt="Caddix Logo" width="320" />
+  <img src="https://raw.githubusercontent.com/MarcusGros/caddix/main/caddix.jpeg" alt="Caddix Logo" width="320" />
 </p>
 
 # Caddix - PostgreSQL Connection Assistant 
