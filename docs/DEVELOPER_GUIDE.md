@@ -38,9 +38,13 @@ caddix/
 │   ├── test_security_penetration.py
 │   ├── test_session_basics.py
 │   └── test_stress_concurrency.py
-├── docs/                 # Developer documentation, architecture & API references
+├── docs/                 # User guide, API reference, architecture & developer documentation
+│   ├── API_REFERENCE.md
+│   ├── ARCHITECTURE.md
+│   ├── DEVELOPER_GUIDE.md
+│   └── USER_GUIDE.md
 ├── pyproject.toml        # Project configuration, dependencies & build metadata (PEP 621)
-└── README.md             # Complete user manual & quickstart guide
+└── README.md             # Project overview, key features & quickstart guide
 ```
 
 ### Module Responsibilities in Detail:
@@ -166,6 +170,6 @@ uv build
 2. **Security First**:
    Never use raw string interpolation (e.g. `f"SELECT {col} FROM {table}"`) without proper `psycopg.sql.Identifier` wrapping and parameterized values.
 3. **Documentation**:
-   Every new public method added to `DatabaseSession` must be documented in `README.md` with usage examples and in `docs/API_REFERENCE.md`.
+   Every new public method added to `DatabaseSession` must be documented in `docs/USER_GUIDE.md` with usage examples and in `docs/API_REFERENCE.md`.
 4. **Code Consistency**:
    Follow PEP 8 conventions, maintain comprehensive type annotations, and ensure all existing and new unit tests pass before submitting changes.
