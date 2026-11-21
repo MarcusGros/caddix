@@ -83,7 +83,7 @@ For in-depth guides, complete API listings, and developer documentation, explore
 
 ## 👤 Author & License
 
-- **Author**: Marcus Gros (`marcus-gros@freenet.de`)
+- **Author**: Marcus Gros
 - **Copyright**: 2026 Marcus Gros
 - **License**: [MIT](https://github.com/MarcusGros/caddix/blob/main/LICENSE)
 
