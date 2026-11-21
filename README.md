@@ -1,10 +1,6 @@
-```
-                 _     _ _      
-  ___ __ _  __| | __| (_)_  __
- / __/ _` |/ _` |/ _` | \ \/ /
-| (_| (_| | (_| | (_| | |>  < 
- \___\__,_|\__,_|\__,_|_/_/\_\
-```
+<p align="center">
+  <img src="caddix.jpeg" alt="Caddix Logo" width="320" />
+</p>
 
 # Caddix - PostgreSQL Connection Assistant 
 
@@ -92,3 +88,7 @@ For in-depth guides, complete API listings, and developer documentation, explore
 - **License**: [MIT](https://github.com/MarcusGros/caddix/blob/main/LICENSE)
 
 Have fun building fast, secure PostgreSQL applications with **Caddix**! 🐘
+
+---
+
+<sub>*Logo AI-generated via <a href="https://perchance.org">perchance.org</a>*</sub>
