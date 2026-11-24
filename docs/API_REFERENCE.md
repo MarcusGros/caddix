@@ -40,7 +40,9 @@ caddix.Setup(
     application_name: str = 'python',
     ttl: int = 10,
     max_connections: int = 10,
-    default_rowfactory: callable = dict_row
+    default_rowfactory: callable = dict_row,
+    cursor_factory: callable = None,
+    client_encoding: str = None
 )
 ```
 
@@ -55,8 +57,9 @@ caddix.Setup(
 - `verbose` *(bool, optional)*: When `True`, detailed SQL statements and parameters are included in error messages (intended for development/debugging). Default: `False`.
 - `application_name` *(str, optional)*: Application name reported to PostgreSQL logs and `pg_stat_activity`. Default: `'python'`.
 - `ttl` *(int, optional)*: Time-to-Live for pooled connections in seconds. Expired connections are automatically reconnected. Default: `10`.
-- `max_connections` *(int, optional)*: Maximum number of pooled connections. Default: `10`.
+- `max_connections` *(int, optional)*: Maximum number of idle connections retained in the pool, not a limit on simultaneous connections. Default: `10`.
 - `default_rowfactory` *(callable, optional)*: Default row factory for cursors (e.g. `dict_row`, `tuple_row`). Default: `dict_row`.
+- `client_encoding` *(str, optional)*: PostgreSQL client encoding passed to libpq. When set, Psycopg also uses it to decode connection errors; it affects successful sessions too. Default: unset.
 
 ---
 
@@ -169,7 +172,7 @@ id_to_name = db.execute_fetchdict("SELECT id, name FROM users")
 
 Automatically builds and executes secure SELECT queries using `psycopg.sql.Identifier`.
 
-> ℹ️ **Design & Query Scope**: The `select_*` helper methods are intentionally optimized for straightforward equality checks (`key=value`) and `IS NULL` tests (`key=None`). For advanced queries requiring comparisons (`>`, `<`, `>=`, `<=`, `!=`), set inclusion (`IN`), pattern matching (`LIKE`, `ILIKE`), boolean `OR` logic, explicit `ORDER BY`, or pagination (`LIMIT`/`OFFSET`), use the parameterized [Combined Execute & Fetch Helpers](#combined-execute--fetch-helpers) (e.g. `db.execute_fetchall(...)`). More expressive query builder capabilities may be considered in future releases without fixed timelines.
+> ℹ️ **Design & Query Scope**: The `select_*` helper methods are intentionally optimized for straightforward equality checks (`key=value`) and `IS NULL` tests (`key=None`). For advanced queries requiring comparisons (`>`, `<`, `>=`, `<=`, `!=`), set inclusion (`IN`), pattern matching (`LIKE`, `ILIKE`), boolean `OR` logic, explicit `ORDER BY`, or pagination (`LIMIT`/`OFFSET`), use the parameterized [Combined Execute & Fetch Methods](#combined-execute--fetch-methods) (e.g. `db.execute_fetchall(...)`). More expressive query builder capabilities may be considered in future releases without fixed timelines.
 
 #### `select_all(tablename, columns=['*'], **kwargs)`
 Returns all rows matching the WHERE conditions.

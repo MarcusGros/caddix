@@ -2,6 +2,11 @@
 # -*- coding: utf-8 -*-
 # vim: set fileencoding=utf-8 :
 
+"""PostgreSQL sessions, configuration, connection pooling, and Psycopg row factories.
+
+Register a profile with :class:`Setup`, then use :class:`DatabaseSession` as a
+context manager. Transactions must be committed explicitly to persist changes.
+"""
 
 from psycopg.rows import class_row, dict_row, namedtuple_row, scalar_row, tuple_row
 
@@ -15,7 +20,7 @@ __author__ = "Marcus Gros"
 __email__ = "marcus-gros@freenet.de"
 __copyright__ = "Copyright 2026 Marcus Gros"
 __license__ = "MIT"
-__version__ = "1.1.0"
+__version__ = "1.1.1"
 __requirements__ = ["psycopg"]
 __all__ = [
     "Setup",

@@ -148,6 +148,10 @@ uv sync --extra dev
 ```
 
 ### Running Tests:
+The integration tests drop and recreate tables and other objects in the
+`caddix` database on `localhost:5432` using the `caddix` user and password.
+Use a dedicated disposable test database, never a database containing valuable data.
+
 ```bash
 # Run full test suite with pytest:
 uv run pytest
@@ -155,6 +159,76 @@ uv run pytest
 # Or run with standard unittest:
 uv run python -m unittest discover -s Tests
 ```
+
+### Standard test results
+
+On 2026-11-24, the standard pytest suite was run on Linux for every combination
+of the Python and PostgreSQL versions below. Each run used a fresh database in
+an isolated temporary cluster, not the existing PostgreSQL 17 instance.
+Each cell shows the number of passing tests.
+
+| Python | PostgreSQL 16.15 | PostgreSQL 17.11 | PostgreSQL 18.6 |
+| --- | --- | --- | --- |
+| 3.10.20 | 85 passed | 85 passed | 85 passed |
+| 3.11.15 | 85 passed | 85 passed | 85 passed |
+| 3.12.3 | 85 passed, 2 warnings | 85 passed, 2 warnings | 85 passed, 2 warnings |
+| 3.13.13 | 85 passed | 85 passed | 85 passed |
+| 3.14.4 | 85 passed | 85 passed | 85 passed |
+
+The Python 3.12 warnings were deprecations from system pytest plugins. An earlier
+run on the same date also passed all 85 tests for each Python version against
+PostgreSQL 18. These results cover this Linux environment, not Windows or macOS.
+The CI configuration covers Python 3.10–3.14 against PostgreSQL 16–18; consult
+GitHub Actions for actual CI results.
+
+### Stress tests
+
+The stress tests exercise database operations repeatedly and in parallel. They
+are disabled by default locally and run separately in each CI matrix job.
+
+**Before running them:** use a disposable database. The tests create and drop
+uniquely named tables and a procedure in `public`, so the test user needs
+permission to create them. If a test process is killed, these objects may need
+manual removal. The connection settings are:
+
+| Environment variable | Default |
+| --- | --- |
+| `PGHOST` | `localhost` |
+| `PGPORT` | `5432` |
+| `PGDATABASE` | `caddix` |
+| `PGUSER` | `caddix` |
+| `PGPASSWORD` | `caddix` |
+
+Run the stress tests with:
+
+```bash
+CADDIX_STRESS=1 uv run pytest -q Tests/test_stress.py
+```
+
+**What is tested:**
+
+- 12 threads each perform 100 create, read, update and delete iterations. The
+  test checks committed changes and both explicit and automatic rollbacks.
+- Another test checks 400 sequential connection reuses, recovery from an SQL
+  error and a later commit. The pool keeps at most four idle connections; it
+  does not limit active connections. The server and role must allow at least
+  12 connections, in addition to any already in use.
+- Two tests run a reproducible shuffled workload, once sequentially and once
+  across eight threads. They mix CRUD, batch operations, SQL and fetch helpers,
+  functions, procedures, metadata, transactions and SQL error recovery. They
+  check return values and the final committed rows.
+
+**Results:** On 2026-11-24, all four stress tests passed on Linux for each of
+the 15 Python/PostgreSQL combinations in the standard-results table above.
+Each Python 3.12 run reported two deprecation warnings from system pytest
+plugins. An earlier run of the original two stress tests also passed in all
+15 combinations. Both runs used isolated temporary clusters, which were removed
+afterwards.
+
+**Limits:** These tests cover many API paths, not every input, error, feature or
+concurrency pattern. They do not test multiple processes, sustained load,
+Windows or macOS, and cannot guarantee stability for every workload. Check
+GitHub Actions separately for actual CI results.
 
 ### Building the Package:
 ```bash

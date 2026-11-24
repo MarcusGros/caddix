@@ -81,6 +81,14 @@ For in-depth guides, complete API listings, and developer documentation, explore
 
 ---
 
+## 🧪 Testing
+
+- The standard suite and four stress tests passed on Linux across all 15 combinations of Python 3.10–3.14 and PostgreSQL 16–18.
+- Stress tests cover sequential and parallel CRUD, batch operations, SQL and fetch helpers, functions, procedures, metadata, transactions, error recovery and connection pool reuse.
+- These tests do not cover every scenario, sustained load, multiple processes, Windows or macOS. See the [Developer Guide](https://github.com/MarcusGros/caddix/blob/main/docs/DEVELOPER_GUIDE.md) for results and limitations.
+
+---
+
 ## 👤 Author & License
 
 - **Author**: Marcus Gros

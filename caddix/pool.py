@@ -16,6 +16,9 @@ class PGPool:
     connection details and time-to-live (TTL) values for individual connections. The pooling mechanism
     is implemented using Python's `queue.Queue` for thread-safety when accessing pooled connections.
 
+    :param configname: Registered profile name. An unknown name raises KeyError.
+    :raises psycopg.Error: If opening a new connection fails; errors are not wrapped.
+
     :ivar configname: The name of the configuration to use for the database connection.
     :type configname: str
     :ivar queue: A thread-safe queue used to store and manage connections for the specified configuration.
@@ -81,6 +84,11 @@ class PGPool:
         self.release(self.con, self.expire)
 
     def release(self, con, expire):
+        """Return a usable connection to the idle queue, or close it if the queue is full.
+
+        :param con: Connection to return; closed or broken connections are ignored.
+        :param expire: Expiry timestamp assigned when the connection was created.
+        """
         if con is None or con.closed or getattr(con, 'broken', False):
             return
         try:
@@ -92,4 +100,5 @@ class PGPool:
                 pass
 
     def single_connect(self):
+        """Open an independent, unpooled connection; the caller must close it."""
         return psycopg.connect(conninfo=Configs.configs[self.configname]['dsn'])

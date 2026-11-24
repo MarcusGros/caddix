@@ -24,6 +24,18 @@ log = logging.getLogger('caddix')
 
 
 class CaddixError(Exception):
+    """Wrap a psycopg execution error; ``orig`` retains the original exception.
+
+    The message uses the server's primary diagnostic when available, otherwise
+    the original error text. With ``verbose=True``, it includes the statement,
+    parameters and original error instead; these may contain sensitive data.
+
+    :param orig: Original psycopg exception.
+    :param stm: Executed statement, or None.
+    :param params: Parameters supplied to the failing operation.
+    :param verbose: Include statement and parameters in the message.
+    """
+
     def __init__(self, orig: Exception, stm: str | None, params: Any, verbose: bool = False):
         self.orig = orig
         if verbose:
@@ -44,27 +56,28 @@ class CaddixError(Exception):
 
 
 class CaddixSessionError(Exception):
+    """Report an invalid session configuration or API argument."""
+
     pass
 
 
 class DatabaseSession:
-    """
-    Represents a database session to manage connections and execute queries.
+    """Manage a pooled PostgreSQL connection and its cursor.
 
-    The DatabaseSession class facilitates interaction with a PostgreSQL database using a connection pool.
-    It provides methods for executing queries, fetching results, and performing various database operations.
-    This class also supports context management, which ensures that resources are properly cleaned up
-    when the session scope completes.
+    The context manager closes the session on exit, even on an exception; it
+    does not commit automatically. Commit explicitly to preserve changes.
+    Query helpers use the configured row factory unless otherwise documented.
+    Keyword column and parameter names with exactly one leading underscore
+    have that underscore removed; double-leading underscores are unchanged.
 
-    :ivar cursor_factory: Defines the row factory used for fetching results, allowing custom transformations
-        of query results into specific formats or types.
-    :type cursor_factory: callable
-    :ivar con: The database connection object used for all database interactions through this session.
-    :type con: psycopg.Connection
-    :ivar cur: The database cursor used to execute and fetch query results.
-    :type cur: psycopg.Cursor
-    :ivar last_query: Stores the last executed query string. Useful for debugging or logging purposes.
-    :type last_query: str
+    :param configname: Registered configuration name; defaults to ``default``.
+    :param cursor_factory: Optional truthy psycopg row factory override.
+    :raises CaddixSessionError: If the configuration is not registered.
+    :ivar con: Pooled psycopg connection.
+    :ivar cur: Cursor used by this session.
+    :ivar cursor_factory: Selected row factory.
+    :ivar last_query: Last query recorded by execute/executemany or a failed
+        COPY, initially None; successful COPY does not update it.
     """
 
     def __init__(self, configname='default', cursor_factory=None):
@@ -92,6 +105,11 @@ class DatabaseSession:
         self.close()
 
     def close(self):
+        """Close the cursor, roll back the open connection and release it.
+
+        Psycopg errors during cursor close or rollback are suppressed. Repeated
+        calls do not release the connection again.
+        """
         if hasattr(self, 'cur') and self.cur is not None and not self.cur.closed:
             try:
                 self.cur.close()
@@ -117,12 +135,23 @@ class DatabaseSession:
         }
 
     def commit(self):
+        """Commit the connection's current transaction; psycopg errors propagate."""
         self.con.commit()
 
     def rollback(self):
+        """Roll back the connection's current transaction; psycopg errors propagate."""
         self.con.rollback()
 
     def execute(self, query, *args, **kwargs):
+        """Execute a psycopg query without fetching or committing.
+
+        :param query: SQL string or psycopg composable.
+        :param args: Positional parameters; a single tuple, list or dict is
+            passed directly, otherwise the positional arguments form a tuple.
+        :param kwargs: Named parameters, used only when no args are supplied.
+        :raises CaddixError: If psycopg execution fails; ``orig`` is retained.
+        :returns: None. ``last_query`` is updated before execution.
+        """
         self.last_query = str(query)
         clean_kwargs = self.__kwargs__(kwargs)
         try:
@@ -138,6 +167,13 @@ class DatabaseSession:
             raise CaddixError(e, self.last_query, params, verbose=self.cnf.get('verbose', False)) from None
 
     def executemany(self, query, values):
+        """Execute a query for each parameter set, without fetching or committing.
+
+        :param query: SQL string or psycopg composable.
+        :param values: Parameter sets passed unchanged to psycopg.
+        :raises CaddixError: If psycopg execution fails.
+        :returns: None. ``last_query`` is updated before execution.
+        """
         self.last_query = str(query)
         verbose = self.cnf.get('verbose', False)
         try:
@@ -148,21 +184,29 @@ class DatabaseSession:
     # ===== fetch from cursor after executing =====
 
     def fetchone(self):
+        """Fetch the next row, or None if exhausted or no result is available."""
         if not self.cur.description:
             return None
         return self.cur.fetchone()
 
     def fetchall(self):
+        """Fetch all remaining rows, or an empty list if there is no result."""
         if not self.cur.description:
             return []
         return self.cur.fetchall()
 
     def fetchmany(self, size):
+        """Fetch up to ``size`` remaining rows, or [] if there is no result."""
         if not self.cur.description:
             return []
         return self.cur.fetchmany(size)
 
     def fetchscalar(self):
+        """Fetch the first column of the next row, or None if unavailable.
+
+        Temporarily uses psycopg's scalar row factory and restores the previous
+        factory even if fetching fails. SQL NULL also yields None.
+        """
         if not self.cur.description:
             return None
         factory = self.cur.row_factory
@@ -173,6 +217,10 @@ class DatabaseSession:
             self.cur.row_factory = factory
 
     def fetchlist(self):
+        """Fetch the first column of remaining rows as a list, or [].
+
+        Temporarily uses tuple rows and restores the previous row factory.
+        """
         if not self.cur.description:
             return []
         factory = self.cur.row_factory
@@ -184,6 +232,11 @@ class DatabaseSession:
             self.cur.row_factory = factory
 
     def fetchdict(self):
+        """Fetch remaining two-column rows into a dict, or {}.
+
+        Later duplicate keys overwrite earlier ones. Rows must unpack into two
+        values and keys must be hashable. The previous row factory is restored.
+        """
         if not self.cur.description:
             return {}
         factory = self.cur.row_factory
@@ -197,26 +250,32 @@ class DatabaseSession:
     # ===== execute and return fetched row/s =====
 
     def execute_fetchone(self, query, *args, **kwargs):
+        """Execute with ``execute`` arguments, then return ``fetchone()``."""
         self.execute(query, *args, **kwargs)
         return self.fetchone()
 
     def execute_fetchall(self, query, *args, **kwargs):
+        """Execute with ``execute`` arguments, then return ``fetchall()``."""
         self.execute(query, *args, **kwargs)
         return self.fetchall()
 
     def execute_fetchmany(self, query, size, *args, **kwargs):
+        """Execute with ``execute`` arguments, then return ``fetchmany(size)``."""
         self.execute(query, *args, **kwargs)
         return self.fetchmany(size)
 
     def execute_fetchscalar(self, query, *args, **kwargs):
+        """Execute with ``execute`` arguments, then return ``fetchscalar()``."""
         self.execute(query, *args, **kwargs)
         return self.fetchscalar()
 
     def execute_fetchdict(self, query, *args, **kwargs):
+        """Execute with ``execute`` arguments, then return ``fetchdict()``."""
         self.execute(query, *args, **kwargs)
         return self.fetchdict()
 
     def execute_fetchlist(self, query, *args, **kwargs):
+        """Execute with ``execute`` arguments, then return ``fetchlist()``."""
         self.execute(query, *args, **kwargs)
         return self.fetchlist()
 
@@ -226,34 +285,65 @@ class DatabaseSession:
         self.execute(query, **params)
 
     def select_all(self, tablename: str, columns: Sequence[str] | str = ('*',), **kwargs):
+        """Select and fetch all matching rows from ``tablename``.
+
+        :param columns: Column names, a comma-separated string, or ``*``.
+        :param kwargs: ANDed equality filters; None means IS NULL. No filters
+            selects all rows. See the class docstring for underscore handling.
+        :returns: Remaining rows as a list, using the configured row factory.
+        :raises CaddixError: If query execution fails.
+        """
         self._execute_select(tablename, columns=columns, **kwargs)
         return self.fetchall()
 
     def select_one(self, tablename: str, columns: Sequence[str] | str = ('*',), **kwargs):
+        """Select as in ``select_all`` and fetch one row, or None.
+
+        No ordering or SQL LIMIT is added.
+        """
         self._execute_select(tablename, columns=columns, **kwargs)
         return self.fetchone()
 
     def select_scalar(self, tablename: str, column: str, **kwargs):
+        """Select ``column`` with ``select_all`` filters; return its first value or None."""
         self._execute_select(tablename, columns=[column], **kwargs)
         return self.fetchscalar()
 
     def select_many(self, tablename: str, size: int, columns: Sequence[str] | str = ('*',), **kwargs):
+        """Select as in ``select_all`` and fetch up to ``size`` rows.
+
+        :raises CaddixSessionError: If size is None or not positive.
+        No SQL LIMIT or ordering is added.
+        """
         if size is None or size <= 0:
             raise CaddixSessionError('select_many() requires size > 0')
         self._execute_select(tablename, columns=columns, **kwargs)
         return self.fetchmany(size)
 
     def select_list(self, tablename: str, column: str, **kwargs):
+        """Select ``column`` with ``select_all`` filters and return its values as a list."""
         self._execute_select(tablename, columns=[column], **kwargs)
         return self.fetchlist()
 
     def select_dict(self, tablename: str, column_key: str, column_value: str, **kwargs):
+        """Select two columns with ``select_all`` filters and return a dict.
+
+        Duplicate keys overwrite earlier values; keys must be hashable.
+        """
         self._execute_select(tablename, columns=[column_key, column_value], **kwargs)
         return self.fetchdict()
 
     # ===== for easy data-manipulation =====
 
     def insert(self, tablename: str, returning=None, **kwargs):
+        """Insert one row from keyword column values.
+
+        :param tablename: Table name, optionally schema-qualified.
+        :param returning: Column names or ``*`` for RETURNING; falsy disables it.
+        :param kwargs: Column values; see class docstring for underscore handling.
+        :returns: One returned row if requested, otherwise None.
+        :raises CaddixError: If execution fails. No commit is performed.
+        """
         kwargs = self.__kwargs__(kwargs)
         query, safe_params = build_insert_query(self.con, tablename, kwargs, returning=returning)
         self.execute(query, **safe_params)
@@ -262,6 +352,16 @@ class DatabaseSession:
         return None
 
     def update(self, tablename: str, values: dict[str, Any] | None = None, returning=None, check_changes: bool = False, **kwargs):
+        """Update rows using ``values`` and keyword equality filters.
+
+        None filter values mean IS NULL; without filters all rows may be
+        updated. With ``check_changes``, only rows distinct from at least one
+        supplied value are updated. ``returning`` selects returned columns.
+
+        :returns: Returned rows when requested, otherwise None; if ``values``
+            is empty, no query runs and [] or 0 is returned respectively.
+        :raises CaddixError: If execution fails. No commit is performed.
+        """
         kwargs = self.__kwargs__(kwargs)
         values = {} if values is None else self.__kwargs__(values)
         query, safe_params, has_set = build_update_query(
@@ -276,6 +376,14 @@ class DatabaseSession:
         return None
 
     def delete(self, tablename: str, returning=None, allow_all: bool = False, **kwargs):
+        """Delete rows matching keyword equality filters (None means IS NULL).
+
+        :param returning: Column names or ``*`` to fetch deleted rows.
+        :param allow_all: Permit deletion without filters when true.
+        :returns: Returned rows if requested, otherwise None; does not commit.
+        :raises CaddixSessionError: If no filters are given and allow_all is false.
+        :raises CaddixError: If execution fails.
+        """
         kwargs = self.__kwargs__(kwargs)
         if not kwargs and not allow_all:
             raise CaddixSessionError(
@@ -291,6 +399,15 @@ class DatabaseSession:
     # ===== for easy bulk data-manipulation =====
 
     def insert_batch(self, tablename, values, returning=None):
+        """Insert mappings from ``values`` using first-row keys as columns.
+
+        Without ``returning``, COPY is used; missing keys become None and extra
+        keys are ignored. With ``returning``, psycopg ``executemany`` is used
+        and then ``fetchall`` is called; result availability depends on psycopg.
+        :returns: 0 for empty input, COPY rowcount without returning, otherwise
+            the fetched rows. No commit is performed.
+        :raises CaddixError: If COPY or execution raises a psycopg error.
+        """
         if not values:
             return 0
 
@@ -331,6 +448,19 @@ class DatabaseSession:
         return self.fetchall()
 
     def update_batch(self, tablename, values, update_columns, where_columns, returning=None, check_changes: bool = False):
+        """Execute an update for each mapping in ``values``.
+
+        Column arguments accept sequences or comma-separated strings;
+        ``update_columns='*'`` derives columns from the first row excluding
+        ``where_columns``. WHERE comparisons use SQL equality, including for
+        None. ``check_changes`` adds IS DISTINCT FROM checks.
+
+        :returns: 0 for empty input, otherwise cursor rowcount or, with
+            ``returning``, the result of ``fetchall`` after ``executemany``.
+            Result availability depends on psycopg; no commit is performed.
+        :raises CaddixSessionError: If a specified column is absent from the first row.
+        :raises CaddixError: If execution fails.
+        """
         if not values:
             return 0
 
@@ -364,6 +494,20 @@ class DatabaseSession:
         return self.cur.rowcount
 
     def upsert_batch(self, tablename, values, conflict_columns=None, update_columns='*', returning=None, conflict_target=None, check_changes: bool = False):
+        """Execute INSERT ON CONFLICT for each mapping in ``values``.
+
+        Columns come from the first row. ``conflict_target`` is a fallback for
+        ``conflict_columns`` when the latter is None. Column lists may be
+        sequences or comma-separated strings. ``update_columns='*'`` updates
+        non-conflict columns; None, '' or [] selects DO NOTHING. With
+        ``check_changes``, updates require a distinct value.
+
+        :returns: 0 for empty input, otherwise cursor rowcount or, with
+            ``returning``, ``fetchall`` after ``executemany``. Result
+            availability depends on psycopg; no commit is performed.
+        :raises CaddixSessionError: If conflict columns are missing for nonempty input.
+        :raises CaddixError: If execution fails.
+        """
         if not values:
             return 0
 
@@ -395,15 +539,16 @@ class DatabaseSession:
     # ===== function & procedure execution =====
 
     def call_func(self, funcname: str, *args, **kwargs):
-        """
-        Executes a PostgreSQL function (SELECT * FROM funcname(...)) and returns all result rows.
+        """Call ``funcname`` via SELECT * FROM and fetch all rows.
+
+        Positional and keyword arguments become positional and named PostgreSQL
+        arguments, respectively; keyword names follow class underscore rules.
+        :raises CaddixError: If execution fails. No commit is performed.
         """
         return self.func_all(funcname, *args, **kwargs)
 
     def call_function(self, funcname: str, *args, **kwargs):
-        """
-        Alias for call_func.
-        """
+        """Alias for ``call_func`` with the same arguments and result."""
         return self.call_func(funcname, *args, **kwargs)
 
     def _execute_func(self, funcname: str, as_table: bool, *args, **kwargs):
@@ -412,29 +557,27 @@ class DatabaseSession:
         self.execute(query, **params)
 
     def func_all(self, funcname: str, *args, **kwargs):
-        """
-        Executes a PostgreSQL function and returns all result rows (via fetchall).
-        """
+        """Call as in ``call_func`` and return all rows via ``fetchall``."""
         self._execute_func(funcname, True, *args, **kwargs)
         return self.fetchall()
 
     def func_one(self, funcname: str, *args, **kwargs):
-        """
-        Executes a PostgreSQL function and returns a single result row (via fetchone).
-        """
+        """Call as in ``call_func`` and return the first row, or None."""
         self._execute_func(funcname, True, *args, **kwargs)
         return self.fetchone()
 
     def func_scalar(self, funcname: str, *args, **kwargs):
-        """
-        Executes a PostgreSQL function (SELECT funcname(...)) and returns a single scalar value.
+        """Call via SELECT funcname(...) and return its first scalar value or None.
+
+        Arguments are handled as in ``call_func``.
         """
         self._execute_func(funcname, False, *args, **kwargs)
         return self.fetchscalar()
 
     def func_many(self, funcname: str, size: int, *args, **kwargs):
-        """
-        Executes a PostgreSQL function and returns up to `size` result rows (via fetchmany).
+        """Call as in ``call_func`` and fetch up to ``size`` rows.
+
+        :raises CaddixSessionError: If size is None or not positive.
         """
         if size is None or size <= 0:
             raise CaddixSessionError('func_many() requires size > 0')
@@ -442,23 +585,21 @@ class DatabaseSession:
         return self.fetchmany(size)
 
     def func_list(self, funcname: str, *args, **kwargs):
-        """
-        Executes a PostgreSQL function and returns the first column of all rows as a list.
-        """
+        """Call as in ``call_func`` and return the first column as a list."""
         self._execute_func(funcname, True, *args, **kwargs)
         return self.fetchlist()
 
     def func_dict(self, funcname: str, *args, **kwargs):
-        """
-        Executes a PostgreSQL function returning 2 columns and returns them as a key-value dictionary.
-        """
+        """Call as in ``call_func`` and convert two-column rows using ``fetchdict``."""
         self._execute_func(funcname, True, *args, **kwargs)
         return self.fetchdict()
 
     def call_proc(self, procname: str, *args, **kwargs):
-        """
-        Executes a PostgreSQL stored procedure (CALL procname(...)).
-        Returns output/INOUT parameters if any, or None.
+        """Execute CALL for ``procname`` with arguments as in ``call_func``.
+
+        :returns: The first result row if the cursor has a description,
+            otherwise None. No commit is performed.
+        :raises CaddixError: If execution fails.
         """
         kwargs = self.__kwargs__(kwargs)
         query, params = build_call_proc_query(self.con, procname, *args, **kwargs)
@@ -468,14 +609,18 @@ class DatabaseSession:
         return None
 
     def call_procedure(self, procname: str, *args, **kwargs):
-        """
-        Alias for call_proc.
-        """
+        """Alias for ``call_proc`` with the same arguments and result."""
         return self.call_proc(procname, *args, **kwargs)
 
     # ===== other helpful thinks =====
 
     def exists(self, tablename: str, **kwargs) -> bool:
+        """Return whether a row matches the ``select_all`` equality filters.
+
+        An undefined table returns False and attempts to roll back any active
+        transaction, potentially discarding unrelated uncommitted changes.
+        Other execution errors propagate as ``CaddixError``.
+        """
         try:
             self._execute_select(tablename, ('*',), **kwargs)
             return self.fetchone() is not None
@@ -490,6 +635,16 @@ class DatabaseSession:
             raise
 
     def tabledesc(self, tablename, asdict=False):
+        """Read PostgreSQL catalog metadata for an ordinary table's columns.
+
+        :param tablename: A schema-qualified name, or an unqualified public name.
+        :param asdict: Return metadata keyed by column name instead of rows.
+        :returns: Dict rows with name, type, length, notnull, primarykey,
+            uniquekey, foreignkey and default; or a dict keyed by name with
+            those fields except name. No matches yield [] or {}. Catalog joins
+            can produce multiple rows per column; dict mode keeps the last.
+        :raises CaddixError: If the catalog query fails.
+        """
         factory = self.cur.row_factory
         try:
             self.cur.row_factory = dict_row

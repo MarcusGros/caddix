@@ -39,7 +39,7 @@ This guide provides a comprehensive, practical walkthrough of **Caddix**, coveri
    - [List and Dictionary Functions (`func_list`, `func_dict`)](#list-and-dictionary-functions-func_list-func_dict)
    - [Calling Stored Procedures (`call_proc`, `call_procedure`)](#calling-stored-procedures-call_proc-call_procedure)
 9. [Result Mapping & Custom Row Factories](#9-result-mapping--custom-row-factories)
-   - [Dictionaries (`dict_row`)](#dictionaries-dict_row)
+   - [Dictionaries (`dict_row`)](#dictionaries-dict_row---default)
    - [Tuples & Scalars (`tuple_row`, `scalar_row`)](#tuples--scalars-tuple_row-scalar_row)
    - [NamedTuples (`namedtuple_row`)](#namedtuples-namedtuple_row)
    - [Dataclasses & Custom Classes (`class_row`)](#dataclasses--custom-classes-class_row)
@@ -120,7 +120,7 @@ with caddix.DatabaseSession(configname='analytics') as db:
 | `connect_timeout` | `int` | `10` | Timeout in seconds when connecting to PostgreSQL. |
 | `application_name` | `str` | `'python'` | Application name displayed in `pg_stat_activity` and logs. |
 | `ttl` | `int` | `10` | Time-to-Live (in seconds) for pooled connections before refresh. |
-| `max_connections` | `int` | `10` | Maximum number of active pooled connections in the queue. |
+| `max_connections` | `int` | `10` | Maximum number of idle connections retained in the pool; it does not limit simultaneous connections. |
 | `verbose` | `bool` | `False` | Include full SQL statement and parameters in exception messages (disabled by default; intended for developer debugging). |
 | `default_rowfactory` | `callable` | `dict_row` | Default cursor row factory (`dict_row`, `tuple_row`, etc.). |
 
@@ -676,7 +676,11 @@ with caddix.DatabaseSession() as db:
 
 ## 11. Error Handling & Debugging
 
-When a database error occurs (syntax error, constraint violation, connection issue), Caddix wraps the error in a descriptive `CaddixError` exception.
+Connection errors may show `�` if Psycopg decodes a message with the wrong encoding before a connection is established. If you know the message encoding, set `client_encoding` in `Setup`. For example, use `client_encoding='WIN1252'` only when the message is known to use Windows-1252; it is not correct for every Windows installation. This setting also affects successful sessions. By default it is unset, so existing connection behavior is unchanged.
+
+If PostgreSQL reports too many connections, check the server and role connection limits as well as other processes using the database. `max_connections` only limits how many idle connections Caddix keeps; it does not limit simultaneous connections. Idle connections are checked for expiry when acquired again.
+
+Errors during SQL execution (such as syntax errors or constraint violations) are wrapped in a `CaddixError`. Errors while opening a connection are raised directly by Psycopg.
 
 By default, `verbose=False` is set to prevent SQL queries and sensitive parameters from unintentionally leaking into application logs or production outputs.
 

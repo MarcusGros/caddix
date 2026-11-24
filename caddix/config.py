@@ -3,24 +3,36 @@ from psycopg.rows import dict_row
 
 
 class Configs:
-    """
-    Container for managing database configuration settings.
+    """Register a PostgreSQL connection profile (exported as ``caddix.Setup``).
 
-    The Configs class allows for easy creation, storage, and retrieval
-    of database configuration settings. It supports setting up
-    connections to PostgreSQL databases with customizable parameters
-    such as timeout, application name, and maximum allowed connections.
-    Multiple configurations can be managed under different names.
+    Profiles are stored by name and used by :class:`caddix.DatabaseSession`.
+    No connection is opened during registration. If ``databasename`` is None,
+    no profile is registered.
 
-    :ivar configs: Stores all configurations with their respective names.
-    :type configs: dict
+    :param databasename: PostgreSQL database name.
+    :param username: Database user; None uses libpq's default.
+    :param password: Database password; None uses libpq's default.
+    :param hostname: Server host; None uses libpq's default.
+    :param port: Server port, default 5432.
+    :param name: Profile name, default ``'default'``.
+    :param connect_timeout: Connection timeout in seconds.
+    :param verbose: Include SQL and parameters in wrapped errors; may expose secrets.
+    :param application_name: Application name reported to PostgreSQL.
+    :param ttl: Lifetime of a pooled connection in seconds, checked on acquisition.
+    :param max_connections: Maximum retained idle connections, not an active limit.
+    :param default_rowfactory: Psycopg row factory used by new sessions.
+    :param cursor_factory: If provided, overrides ``default_rowfactory``.
+    :param client_encoding: PostgreSQL client encoding, or None to leave it unset.
+        This also affects successful sessions and may help decode connection errors
+        when their actual encoding is known.
+    :ivar configs: Shared mapping of profile names to connection settings.
     """
     configs = {}
 
     def __init__(self, databasename=None, username=None, password=None, hostname=None, port=5432,
                  name='default', connect_timeout=10, verbose=False,
                  application_name='python', ttl=10, max_connections=10,
-                 default_rowfactory=dict_row, cursor_factory=None):
+                 default_rowfactory=dict_row, cursor_factory=None, client_encoding=None):
         if cursor_factory is not None:
             default_rowfactory = cursor_factory
 
@@ -35,7 +47,8 @@ class Configs:
                     host=hostname,
                     port=port,
                     connect_timeout=connect_timeout,
-                    application_name=application_name
+                    application_name=application_name,
+                    client_encoding=client_encoding
                 ),
                 'ttl': ttl,
                 'default_rowfactory': default_rowfactory,

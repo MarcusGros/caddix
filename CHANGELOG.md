@@ -5,7 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.1.0] - Unreleased
+## [1.1.1] - Unreleased
+
+### Added
+- Optional `client_encoding` in `Setup` to help Psycopg decode connection errors when the message encoding is known. It also affects successful sessions and is unset by default.
+- Opt-in stress tests for concurrent sessions, pool reuse and mixed sequential and parallel workloads. All four passed on Linux across the 15 Python 3.10–3.14 and PostgreSQL 16–18 combinations; see the developer guide for details and limitations. The CI matrix also includes these tests.
+
+### Changed
+- Clarified that `max_connections` limits retained idle connections, not simultaneous connections, and that connection errors are raised directly by Psycopg.
+- Improved public API docstrings for IDE documentation, completion, and code analysis.
+- Documented Linux test results for all combinations of Python 3.10–3.14 and PostgreSQL 16–18; expanded the CI matrix accordingly.
+- Simplified the testing and connection-error documentation.
+- Fixed two broken documentation anchors in the API reference and user guide.
+- Marked the package as Production/Stable in its PyPI classifier.
+
+## [1.1.0] - 2026-11-21
 
 ### Added
 - **Top-Level Exception Exports**: All Caddix exception classes (`CaddixError`, `CaddixSessionError`) are explicitly exported and directly accessible at module level as `caddix.CaddixError` and `caddix.CaddixSessionError`.

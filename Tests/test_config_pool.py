@@ -58,6 +58,15 @@ class TestConfigAndPool(unittest.TestCase):
         self.assertIn("dbname=caddix", dsn)
         self.assertIn("password='complex\\'password\"with spaces & symbols @#$%'", dsn)
 
+    def test_optional_client_encoding_in_dsn(self):
+        from psycopg.conninfo import conninfo_to_dict
+
+        caddix.Setup(name='encoding_default', databasename='caddix')
+        caddix.Setup(name='encoding_explicit', databasename='caddix', client_encoding='WIN1252')
+
+        self.assertNotIn('client_encoding', conninfo_to_dict(Configs.configs['encoding_default']['dsn']))
+        self.assertEqual(conninfo_to_dict(Configs.configs['encoding_explicit']['dsn'])['client_encoding'], 'WIN1252')
+
     def test_configs_store_dict_interface(self):
         configs = Configs()
         configs['primary'] = {'dbname': 'db1', 'dsn': 'dbname=db1'}
